@@ -17,47 +17,36 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      # Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           clean: false
 
-      # Grant execute permission for Gradle wrapper on Linux/macOS
       - name: Grant execute permission to Gradle wrapper (Linux/macOS only)
         if: runner.os != 'Windows'
         run: chmod +x ./gradlew
 
-      # Setup Java environment
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Echo a message for debugging purposes
       - name: Echo message
         run: echo "Hi, I am Vraj from COSC 1209 class"
 
-      # Clear Gradle caches (fixes potential corrupted cache issues)
-      - name: Clear Gradle Cache
-        run: rm -rf ~/.gradle/caches
-
-      # Setup Gradle environment
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.6
 
-      # Build the JAR file
       - name: Build the JAR
-        run: ./gradlew clean bootJar --stacktrace
+        run: ./gradlew clean bootJar
 
-      # Verify JAR file location
       - name: Verify JAR file location
         run: ls -l build/libs
 
-      # Upload the JAR as an artifact with a unique name
+      # Upload JAR as artifact with unique name
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
@@ -69,32 +58,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           clean: false
 
-      # Download the JAR artifact
+      # Download the artifact (JAR is downloaded directly)
       - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: java-app-jar-ubuntu-latest
 
-      # Rename and move the JAR file for Docker build context
+      # Move the downloaded JAR to the root as app.jar
       - name: Move JAR to Docker build context
-        run: mv build/libs/*.jar app.jar
+        run: mv java-app-1.0-SNAPSHOT.jar app.jar
 
-      # Debug the Docker build context
       - name: Debug Build Context
         run: ls -l
 
-      # Set up Docker buildx for multi-platform builds
       - name: Setup Docker Build
         run: |
           docker buildx create --use
           docker buildx inspect --bootstrap
 
-      # Log in to Docker Hub
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USER
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and Push Docker image
+        run: |
+          docker buildx build --platform linux/amd64 -t "$(echo -n "${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.sha }}" | tr -d '\n')" --push .
