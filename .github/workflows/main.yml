@@ -1,4 +1,4 @@
-name: Java CI/CD with Gradle and Docker
+name: CI Workflow
 
 on:
   push:
@@ -11,95 +11,25 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-      # Checkout the repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          clean: false
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # Grant execute permission for Gradle wrapper on Linux/macOS
-      - name: Grant execute permission to Gradle wrapper (Linux/macOS only)
-        if: runner.os != 'Windows'
-        run: chmod +x ./gradlew
+    # Remove Gradle cache directory
+    - name: Clear Gradle Cache
+      run: |
+        if [ "${{ runner.os }}" == "Linux" ] || [ "${{ runner.os }}" == "macOS" ]; then
+          rm -rf ~/.gradle/caches
+        elif [ "${{ runner.os }}" == "Windows" ]; then
+          Remove-Item -Path $env:USERPROFILE\.gradle\caches -Recurse -Force
+        fi
+      shell: bash
 
-      # Setup Java environment
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # Clear Gradle cache to fix cache-related issues
-      - name: Clear Gradle Cache
-        run: rm -rf ~/.gradle/caches
-
-      # Explicitly set JAVA_HOME for Gradle
-      - name: Set JAVA_HOME
-        run: echo "JAVA_HOME=${{ steps.setup-java.outputs.java-home }}" >> $GITHUB_ENV
-
-      # Setup Gradle environment
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: 7.6
-
-      # Build the JAR file with detailed logs for debugging
-      - name: Build the JAR
-        run: ./gradlew clean bootJar --stacktrace --info
-
-      # Verify JAR file location
-      - name: Verify JAR file location
-        run: ls -l build/libs
-
-      # Upload the JAR as an artifact with a unique name
-      - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: java-app-jar-${{ matrix.os }}
-          path: build/libs/*.jar
-
-  docker:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checkout the repository
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          clean: false
-
-      # Download the JAR artifact
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: java-app-jar-ubuntu-latest
-
-      # Rename and move the JAR file for Docker build context
-      - name: Move JAR to Docker build context
-        run: mv build/libs/*.jar app.jar
-
-      # Debug the Docker build context
-      - name: Debug Build Context
-        run: ls -l
-
-      # Set up Docker buildx for multi-platform builds
-      - name: Setup Docker Build
-        run: |
-          docker buildx create --use
-          docker buildx inspect --bootstrap
-
-      # Log in to Docker Hub
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      # Build and push the Docker image
-      - name: Build and Push Docker image
-        run: |
-          docker buildx build --platform linux/amd64 -t "${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.sha }}" --push .
+    # Example step to build the project
+    - name: Build with Gradle
+      run: ./gradlew build
+      shell: bash
