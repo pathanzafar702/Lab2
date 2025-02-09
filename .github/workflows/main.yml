@@ -38,7 +38,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          gradle-version: 7.6 # Updated Gradle version for compatibility with Java 17
+          gradle-version: 7.6
 
       - name: Build the JAR
         run: ./gradlew clean bootJar
@@ -72,7 +72,7 @@ jobs:
       # Move the downloaded JAR to the root as app.jar
       - name: Move JAR to Docker build context
         run: mv java-app-1.0-SNAPSHOT.jar app.jar
-
+  
       - name: Debug Build Context
         run: ls -l
 
