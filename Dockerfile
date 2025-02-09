@@ -1,8 +1,10 @@
-FROM openjdk:8-jre-alpine
+FROM openjdk:17-jre-alpine
 
 EXPOSE 8080
 
-COPY ./build/libs/my-app-1.0-SNAPSHOT.jar /usr/app/
+# Ensure the JAR file name matches the one uploaded in the CI process
+COPY ./build/libs/java-app-jar-ubuntu-latest.jar /usr/app/my-app.jar
+
 WORKDIR /usr/app
 
-ENTRYPOINT ["java", "-jar", "my-app-1.0-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "my-app.jar"]
