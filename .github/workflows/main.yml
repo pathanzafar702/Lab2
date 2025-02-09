@@ -33,12 +33,12 @@ jobs:
           java-version: '17'
 
       - name: Echo message
-        run: echo "Hi, I am Vraj from COSC 1209 class"
+        run: echo "Hi, I am Zafar from COSC 1209 class"
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
-          gradle-version: 7.6.3  # Updated Gradle version for compatibility with Java 17
+          gradle-version: 7.6 # Updated Gradle version for compatibility with Java 17
 
       - name: Build the JAR
         run: ./gradlew clean bootJar
